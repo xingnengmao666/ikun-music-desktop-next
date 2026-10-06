@@ -32,6 +32,8 @@ const defaultSetting: LX.AppSetting = {
   'player.powerSaveBlocker': true,
   'player.isMute': false,
   'player.isVolumeFade': true,
+  'player.volumeFadeDuration': 800,
+  'player.switchFadeDuration': 1200,
   'player.compressor': 0,
   'player.playbackRate': 1,
   'player.preservesPitch': true,

@@ -6,6 +6,29 @@ dd
   .gap-top
     base-checkbox(id="setting_player_volume_fade" :model-value="appSetting['player.isVolumeFade']" :label="$t('setting__play_volume_fade')" @update:model-value="updateSetting({ 'player.isVolumeFade': $event })")
     svg-icon(class="help-icon" name="help-circle-outline" :aria-label="$t('setting__play_volume_fade_tip')")
+  .fade-settings(v-if="appSetting['player.isVolumeFade']")
+    .fade-setting
+      .fade-setting__header
+        span {{ $t('setting__play_volume_fade_duration') }}
+        span {{ formatFadeDuration(appSetting['player.volumeFadeDuration']) }}
+      base-slider-bar(
+        :value="appSetting['player.volumeFadeDuration']"
+        :min="100"
+        :max="5000"
+        :step="100"
+        @change="handleFadeDurationChange"
+      )
+    .fade-setting
+      .fade-setting__header
+        span {{ $t('setting__play_switch_fade_duration') }}
+        span {{ formatFadeDuration(appSetting['player.switchFadeDuration']) }}
+      base-slider-bar(
+        :value="appSetting['player.switchFadeDuration']"
+        :min="100"
+        :max="5000"
+        :step="100"
+        @change="handleSwitchFadeDurationChange"
+      )
   .gap-top
     base-checkbox(id="setting_player_artwork_color_background" :model-value="appSetting['player.artworkColorBackground']" :label="$t('setting__play_artwork_background')" @update:model-value="updateSetting({ 'player.artworkColorBackground': $event })")
   .gap-top
@@ -114,6 +137,14 @@ export default {
       updateSetting({ 'player.powerSaveBlocker': enabled })
     }
 
+    const formatFadeDuration = (duration) => `${(duration / 1000).toFixed(1)}s`
+    const handleFadeDurationChange = (duration) => {
+      updateSetting({ 'player.volumeFadeDuration': Math.round(duration / 100) * 100 })
+    }
+    const handleSwitchFadeDurationChange = (duration) => {
+      updateSetting({ 'player.switchFadeDuration': Math.round(duration / 100) * 100 })
+    }
+
     const isMaxOutputChannelCount = ref(appSetting['player.isMaxOutputChannelCount'])
     const handleUpdateMaxOutputChannelCount = async (enabled) => {
       isMaxOutputChannelCount.value = enabled
@@ -140,6 +171,9 @@ export default {
       mediaDeviceId,
       handleMediaDeviceIdChnage,
       handleUpdatePowerSaveBlocker,
+      formatFadeDuration,
+      handleFadeDurationChange,
+      handleSwitchFadeDurationChange,
       isMaxOutputChannelCount,
       handleUpdateMaxOutputChannelCount,
       playQualityList,
@@ -148,3 +182,26 @@ export default {
   },
 }
 </script>
+
+<style lang="less">
+.fade-settings {
+  display: flex;
+  flex-flow: column nowrap;
+  gap: 10px;
+  margin: 8px 0 0 24px;
+  max-width: 420px;
+}
+
+.fade-setting {
+  display: flex;
+  flex-flow: column nowrap;
+  gap: 4px;
+}
+
+.fade-setting__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+}
+</style>

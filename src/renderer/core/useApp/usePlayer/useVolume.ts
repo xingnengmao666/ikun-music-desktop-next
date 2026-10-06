@@ -3,6 +3,8 @@ import {
   setVolume as setPlayerVolume,
   setMute as setPlayerMute,
   setVolumeFadeEnabled,
+  setVolumeFadeDuration,
+  setSwitchFadeDuration,
 } from '@renderer/plugins/player'
 
 import { debounce } from '@common/utils'
@@ -19,6 +21,8 @@ export default () => {
   setPlayerVolume(appSetting['player.volume'])
   setPlayerMute(appSetting['player.isMute'])
   setVolumeFadeEnabled(appSetting['player.isVolumeFade'])
+  setVolumeFadeDuration(appSetting['player.volumeFadeDuration'])
+  setSwitchFadeDuration(appSetting['player.switchFadeDuration'])
 
   const handleToggleVolumeMute = (_isMute?: boolean) => {
     let muteStatus = _isMute ?? !isMute.value
@@ -72,6 +76,18 @@ export default () => {
     () => appSetting['player.isVolumeFade'],
     (enabled) => {
       setVolumeFadeEnabled(enabled)
+    }
+  )
+  watch(
+    () => appSetting['player.volumeFadeDuration'],
+    (duration) => {
+      setVolumeFadeDuration(duration)
+    }
+  )
+  watch(
+    () => appSetting['player.switchFadeDuration'],
+    (duration) => {
+      setSwitchFadeDuration(duration)
     }
   )
 

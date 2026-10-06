@@ -128,6 +128,16 @@ declare global {
       'player.isVolumeFade': boolean
 
       /**
+       * 播放、暂停和自然结束时的音量渐变时长（毫秒）
+       */
+      'player.volumeFadeDuration': number
+
+      /**
+       * 切歌和停止时的音量渐变时长（毫秒）
+       */
+      'player.switchFadeDuration': number
+
+      /**
        * 压缩机强度，0 为关闭，100 为最强
        */
       'player.compressor': number

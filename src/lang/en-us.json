@@ -790,4 +790,6 @@
   "setting_play_quality_atmos": "Atmos",
   "setting_play_quality_atmos_plus": "Atmos 2.0",
   "setting_play_quality_master": "Master"
+  ,"setting__play_volume_fade_duration": "Play/pause/end fade duration"
+  ,"setting__play_switch_fade_duration": "Track switch/stop fade duration"
 }

@@ -790,4 +790,6 @@
   "setting_play_quality_atmos": "臻品音质2.0",
   "setting_play_quality_atmos_plus": "臻品音质2.0",
   "setting_play_quality_master": "臻品母带"
+  ,"setting__play_volume_fade_duration": "播放/暫停/結束漸變時長"
+  ,"setting__play_switch_fade_duration": "切歌/停止漸變時長"
 }

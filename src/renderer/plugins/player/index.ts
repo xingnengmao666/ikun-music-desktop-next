@@ -188,21 +188,25 @@ let defaultChannelCount = 2
 export const soundR = 0.5
 
 // 播放/暂停音量渐变
-const FADE_DURATION = 300
+const DEFAULT_FADE_DURATION = 800
 // 切歌时的渐出，比播放/暂停慢一点，接歌才不会突然
-const SWITCH_FADE_DURATION = 400
+const DEFAULT_SWITCH_FADE_DURATION = 1200
 const FADE_INTERVAL = 10
 let targetVolume = 1
 let fadeTimer: ReturnType<typeof setInterval> | null = null
 let isFadeInPending = false
 let isVolumeFadeEnabled = true
+let fadeDuration = DEFAULT_FADE_DURATION
+let switchFadeDuration = DEFAULT_SWITCH_FADE_DURATION
 
 // 当前跑的这段渐出是不是「切歌/停止」的渐出。渐出期间旧曲还在出声，
 // 它的 playing / ended 事件描述的是旧曲，不能拿去驱动界面状态。
 let isSwitchFadeRunning = false
+let isNaturalFadeRunning = false
 
 const clearFade = () => {
   isSwitchFadeRunning = false
+  isNaturalFadeRunning = false
   if (fadeTimer == null) return
   clearInterval(fadeTimer)
   fadeTimer = null
@@ -211,17 +215,20 @@ const clearFade = () => {
 const fadeVolume = (
   to: number,
   onEnd?: () => void,
-  duration = FADE_DURATION,
-  isSwitchFade = false
+  duration = fadeDuration,
+  isSwitchFade = false,
+  isNaturalFade = false
 ) => {
   if (!audio) return
   clearFade()
   const from = audio.volume
-  if (from == to) {
+  if (from == to || duration <= 0) {
+    audio.volume = to
     onEnd?.()
     return
   }
   isSwitchFadeRunning = isSwitchFade
+  isNaturalFadeRunning = isNaturalFade
   const startTime = performance.now()
   fadeTimer = setInterval(() => {
     if (!audio) {
@@ -229,11 +236,43 @@ const fadeVolume = (
       return
     }
     const progress = Math.min((performance.now() - startTime) / duration, 1)
-    audio.volume = from + (to - from) * progress
+    const easedProgress = progress < 0.5
+      ? 2 * progress * progress
+      : 1 - ((-2 * progress + 2) ** 2) / 2
+    audio.volume = from + (to - from) * easedProgress
     if (progress < 1) return
     clearFade()
     onEnd?.()
   }, FADE_INTERVAL)
+}
+
+const normalizeFadeDuration = (duration: number, fallback: number) => {
+  if (!Number.isFinite(duration)) return fallback
+  return Math.min(Math.max(Math.round(duration), 0), 5000)
+}
+
+export const setVolumeFadeDuration = (duration: number) => {
+  fadeDuration = normalizeFadeDuration(duration, DEFAULT_FADE_DURATION)
+}
+
+export const setSwitchFadeDuration = (duration: number) => {
+  switchFadeDuration = normalizeFadeDuration(duration, DEFAULT_SWITCH_FADE_DURATION)
+}
+
+const handleNaturalFade = () => {
+  if (
+    !audio ||
+    audio.paused ||
+    !isVolumeFadeEnabled ||
+    isSwitchFadeRunning ||
+    !Number.isFinite(audio.duration) ||
+    audio.duration <= 0
+  ) return
+
+  const remaining = (audio.duration - audio.currentTime) * 1000
+  if (remaining > fadeDuration) return
+  if (remaining <= 20 || isNaturalFadeRunning) return
+  fadeVolume(0, undefined, Math.max(remaining, 20), false, true)
 }
 
 // 切歌时要把「换源」推迟到渐出结束，否则音频会被硬切。
@@ -274,6 +313,7 @@ export const createAudio = () => {
   audio.autoplay = true
   audio.preload = 'auto'
   audio.crossOrigin = 'anonymous'
+  audio.addEventListener('timeupdate', handleNaturalFade)
   audio.addEventListener('playing', () => {
     if (!isFadeInPending) return
     isFadeInPending = false
@@ -704,7 +744,7 @@ export const setResource = (src: string) => {
   // 上一首还在放就先渐出，等音量到 0 再换源，接歌的接缝才不会是硬切
   if (isVolumeFadeEnabled && !audio.paused) {
     isFadeInPending = false
-    fadeVolume(0, applyPendingSrc, SWITCH_FADE_DURATION, true)
+    fadeVolume(0, applyPendingSrc, switchFadeDuration, true)
     return
   }
   applyPendingSrc()
@@ -759,7 +799,7 @@ export const setStop = () => {
   // 正在播放时先渐出再断源，停止/切歌都不会把声音一刀切掉
   if (isVolumeFadeEnabled && !audio.paused) {
     isFadeInPending = false
-    fadeVolume(0, stopAudio, SWITCH_FADE_DURATION, true)
+    fadeVolume(0, stopAudio, switchFadeDuration, true)
     return
   }
   stopAudio()
