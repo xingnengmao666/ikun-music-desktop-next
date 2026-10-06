@@ -270,7 +270,16 @@ const handleNaturalFade = () => {
   ) return
 
   const remaining = (audio.duration - audio.currentTime) * 1000
-  if (remaining > fadeDuration) return
+  if (remaining > fadeDuration) {
+    // Seeking away from the tail must cancel a pending natural fade.
+    if (isNaturalFadeRunning || (audio.volume === 0 && targetVolume > 0)) {
+      clearFade()
+      audio.volume = targetVolume
+    }
+    return
+  }
+  // A short track should finish its fade-in instead of being faded out again.
+  if (audio.duration <= fadeDuration || isFadeInPending || fadeTimer != null) return
   if (remaining <= 20 || isNaturalFadeRunning) return
   fadeVolume(0, undefined, Math.max(remaining, 20), false, true)
 }
@@ -316,8 +325,14 @@ export const createAudio = () => {
   audio.addEventListener('timeupdate', handleNaturalFade)
   audio.addEventListener('playing', () => {
     if (!isFadeInPending) return
-    isFadeInPending = false
-    fadeVolume(targetVolume)
+    const currentAudio = audio
+    if (!currentAudio) return
+    const duration = Number.isFinite(currentAudio.duration) && currentAudio.duration > 0
+      ? Math.min(fadeDuration, currentAudio.duration * 1000)
+      : fadeDuration
+    fadeVolume(targetVolume, () => {
+      isFadeInPending = false
+    }, Math.max(duration, 20))
   })
 }
 
