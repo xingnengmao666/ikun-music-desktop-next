@@ -790,12 +790,17 @@ const stopAudio = () => {
   pendingSrc = null
   clearFade()
   isFadeInPending = false
+  audio.pause()
   audio.src = ''
   audio.removeAttribute('src')
 }
 
 export const setStop = () => {
   if (!audio) return
+  if (isNaturalFadeRunning) {
+    stopAudio()
+    return
+  }
   // 正在播放时先渐出再断源，停止/切歌都不会把声音一刀切掉
   if (isVolumeFadeEnabled && !audio.paused) {
     isFadeInPending = false
